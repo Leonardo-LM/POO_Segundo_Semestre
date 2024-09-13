@@ -9,6 +9,10 @@ public class Main {
 
         Curso cursoTres = new Curso("Contabilidad Financiera", "CF", "Conrado");
 
+        cursoUno.mostrarInformacionCurso();
+        cursoDos.mostrarInformacionCurso();
+        cursoTres.mostrarInformacionCurso();
+
         estudianteUno.agregarCurso(cursoUno);
         estudianteUno.mostrarInformacion();
 
@@ -18,7 +22,6 @@ public class Main {
 
         estudianteUno.agregarCurso(cursoTres);
         estudianteUno.mostrarInformacion();
-
 
     }
 }
