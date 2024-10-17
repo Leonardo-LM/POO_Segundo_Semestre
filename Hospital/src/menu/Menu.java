@@ -4,127 +4,148 @@ package menu;
 import consultas.Consulta;
 import consultorios.Consultorio;
 import hospital.Hospital;
-import hospital.ValidadorHospital;
-import medicos.Medico;
-import pacientes.Paciente;
+import usuarios.administrador.Administrador;
+import usuarios.medicos.Medico;
+import usuarios.pacientes.Paciente;
+import usuarios.Usuario;
+import utils.Rol;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Scanner;
 
 public class Menu {
-    private Scanner scanner = new Scanner(System.in);
-    private Hospital hospital = new Hospital();
-    private final String USER_PACIENTE = "Juanito";
-    private final String PASSWORD_PACIENTE = "12345";
-    private final String USER_MECIC = "Ale";
-    private final String PASSWORD_MECIC = "123++";
-    private final String USER_ADMIN = "Admin1234";
-    private final String PASSWORD_ADMIN = "12345**";
+    private final Scanner scanner = new Scanner(System.in);
+    private final Hospital hospital = new Hospital();
+    public Usuario usuarioEnSesion;
 
-    private void mostrarMenuPaciente() {
-        int opc = 0;
-        while (opc != 2) {
+
+    private void mostrarMenuPaciente(Paciente paciente) {
+        int opc;
+        do {
+            System.out.print("\nBienvenido/a " + paciente.getNombre());
             System.out.println("""
                     \n----------Menú de opciones----------
                     1.- Ver mis consultas
-                    2.- Salir""");
+                    2.- Ver mi información personal
+                    3.- Ver mi expediente
+                    4.- Salir""");
             System.out.print("Elija una opción: ");
             opc = scanner.nextInt();
+            scanner.nextLine();
 
             switch (opc) {
                 case 1:
+                    hospital.mostrarConsultasPacientes(usuarioEnSesion.id);
                     break;
                 case 2:
-                    System.out.println("Hasta lueguito <3");
-                    return;
-
+                    hospital.mostrarPacientePorId(usuarioEnSesion.id);
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    System.out.println("\n-----Adiosito-----");
+                    break;
+                default:
+                    System.out.println("Opción inválida. Por favor, inténtelo de nuevo.");
             }
-        }
+        } while (opc != 4);
     }
 
-    private void mostrarMenuMedico() {
-        int opc = 0;
-        while (opc != 3) {
+    private void mostrarMenuMedico(Medico medico) {
+        int opc;
+        do {
+            System.out.print("\nBienvenido/a Dr/Dra. " + medico.getNombre());
             System.out.println("""
                     \n----------Menú de opciones----------
                     1.- Ver mis consultas
                     2.- Ver mis pacientes
-                    3.- Salir""");
+                    3.- Consultar paciente
+                    4.- Consultar expediente de paciente
+                    5.- Completar consulta
+                    6.- Mostrar información personal
+                    7.- Salir""");
             System.out.print("Elija una opción: ");
             opc = scanner.nextInt();
+            scanner.nextLine();
 
             switch (opc) {
                 case 1:
+                    hospital.mostrarConsultasMedicos(usuarioEnSesion.id);
                     break;
                 case 2:
+                    hospital.mostrarPacientesDeMedico(usuarioEnSesion.id);
                     break;
                 case 3:
-                    System.out.println("Hasta lueguito <3");
-                    return;
+                    // Implementar funcionalidad para consultar paciente
+                    System.out.println("Ingrese el id del paciente: ");
+                    String idPaciente = scanner.nextLine();
+                    hospital.mostrarPacientePorId(idPaciente);
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    hospital.mostrarMedicoPorId(usuarioEnSesion.id);
+                    break;
+                case 7:
+                    System.out.println("\n-----Adiosito-----");
+                    break;
+                default:
+                    System.out.println("Opción inválida. Por favor, inténtelo de nuevo.");
             }
-        }
+        } while (opc != 7);
     }
 
     public void login() {
         int intentosMaximos = 5, intentosUser = 0;
+        this.mostrarMenuAdmin(hospital.administrador);
         while (intentosUser < intentosMaximos) {
-            System.out.println("Bienvenido");
+            System.out.print("\n--------Bienvenido/a--------\n");
             System.out.println("---Inicia sesión para continuar---");
 
             System.out.print("Ingrese su usuario: ");
             String usuario = scanner.nextLine();
+            scanner.nextLine();
 
-            System.out.print("\nIngrese su contraseña: ");
+            System.out.print("Ingrese su contraseña: ");
             String contrasena = scanner.nextLine();
 
-            if (usuario.equals(this.USER_PACIENTE)) {
-                if (contrasena.equals(this.PASSWORD_PACIENTE)) {
-                    this.mostrarMenuPaciente();
-                    intentosUser = 0;
-                } else {
-                    intentosUser = this.mostrarErrorInicioSesion(intentosUser);
-                }
-            } else if (usuario.equals(this.USER_MECIC)) {
-                if (contrasena.equals(this.PASSWORD_MECIC)) {
-                    this.mostrarMenuMedico();
-                    intentosUser = 0;
-                } else {
-                    intentosUser = this.mostrarErrorInicioSesion(intentosUser);
-                }
-            } else if (usuario.equals(this.USER_ADMIN)) {
-                if (contrasena.equals(this.PASSWORD_ADMIN)) {
-                    this.mostrarMenu();
-                    intentosUser = 0;
-                } else {
-                    intentosUser = this.mostrarErrorInicioSesion(intentosUser);
-                }
+            usuarioEnSesion = hospital.validarInicioSesion(usuario, contrasena);
 
+            if (usuarioEnSesion instanceof Usuario) {
+                if (usuarioEnSesion.getRol() == Rol.PACIENTE) {
+                    Paciente pacienteEnSesion = (Paciente) usuarioEnSesion;
+                    this.mostrarMenuPaciente(pacienteEnSesion);
+                    intentosUser = 0;
+                } else if (usuarioEnSesion.getRol() == Rol.MEDICO) {
+                    Medico medicoEnSesion = (Medico) usuarioEnSesion;
+                    this.mostrarMenuMedico(medicoEnSesion);
+                    intentosUser = 0;
+                } else {
+                    Administrador AdminEnSesion = (Administrador) usuarioEnSesion;
+                    this.mostrarMenuAdmin(AdminEnSesion);
+                    intentosUser = 0;
+                }
             } else {
-                intentosUser = this.mostrarErrorInicioSesion(intentosUser);
+                intentosUser = mostrarErrorInicioSesion(intentosUser);
             }
-
-//            if (usuario.equals(USER_PACIENTE) && contrasena.equals(PASSWORD_PACIENTE)) {
-//                System.out.println("Bienvenido " + usuario);
-//                this.mostrarMenu();
-//            } else {
-//                intentosUser = this.mostrarErrorInicioSesion(intentosUser);
-//            }
-
         }
         System.out.println("\nLímite de intentos alcanzado\n");
     }
 
     private int mostrarErrorInicioSesion(int intentosUser) {
-        System.out.println("\nUsuario o contraseña incorrecta, intente de nuevo\n");
+        System.out.print("\nUsuario o contraseña incorrecta, intente de nuevo\n");
         intentosUser++;
         return intentosUser;
     }
 
-    private void mostrarMenu() {
+    private void mostrarMenuAdmin(Administrador admin) {
         int respuesta = 0;
 
         while (respuesta != 12) {
+            System.out.println("Bienvenido " + admin.nombre);
             System.out.println("""
                     \n----------Menú de opciones----------
                     1.- Registrar un paciente
@@ -144,42 +165,38 @@ public class Menu {
 
             switch (respuesta) {
                 case 1:
-                    // En Hospital
-                    // p -{año actual} - {mes actual} - {longitud pacientes +1} - {1,1000000}
-
                     String id = hospital.generarIdPaciente(), telefono = "";
                     boolean existeNumTelefonoP = false;
 
-
                     System.out.println("-- Registrar paciente --");
-                    System.out.println("Ingrese el/los nombre(s) del paciente: ");
+                    System.out.print("Ingrese el/los nombre(s) del paciente: ");
                     scanner.nextLine();
                     String nombre = scanner.nextLine();
-                    System.out.println("Ingrese el/los apellido(s) del paciente: ");
+                    System.out.print("Ingrese los apellido(s) del paciente: ");
                     String apellido = scanner.nextLine();
 
-                    System.out.println("Ingrese el año de nacimiento: ");
+                    System.out.print("Ingrese el año de nacimiento: ");
                     int ano = scanner.nextInt();
 
-                    System.out.println("Ingrese el mes de nacimiento: ");
+                    System.out.print("Ingrese el mes de nacimiento: ");
                     int mes = scanner.nextInt();
 
-                    System.out.println("Ingrese el dia de nacimiento: ");
+                    System.out.print("Ingrese el dia de nacimiento: ");
                     int dia = scanner.nextInt();
-                    scanner.nextLine();
 
                     LocalDate fechaNacimiento = LocalDate.of(ano, mes, dia);
 
-                    System.out.println("Ingrese su tipo de sangre: ");
-                    String tipoSangre = scanner.nextLine();
                     scanner.nextLine();
-                    System.out.println("Ingrese su sexo: ");
+                    System.out.print("Ingrese su tipo de sangre: ");
+                    String tipoSangre = scanner.nextLine();
+
+                    System.out.print("Ingrese su sexo: ");
                     String sexoString = scanner.next();
                     char sexo = sexoString.charAt(0);
                     scanner.nextLine();
 
                     while (!existeNumTelefonoP) {
-                        System.out.println("Ingrese el teléfono del paciente: ");
+                        System.out.print("Ingrese el teléfono del paciente: ");
                         telefono = scanner.nextLine();
                         if (!hospital.validarNumeroTelefonoPaciente(telefono)) {
                             System.out.println("\nEl número de telefono ya está en uso, ingrese otro por favor");
@@ -188,8 +205,11 @@ public class Menu {
                         }
                     }
 
+                    System.out.print("Ingrese la contrasenia del paciente: ");
+                    String contrasenaPaciente = scanner.nextLine();
 
-                    Paciente paciente = new Paciente(id, nombre, apellido, fechaNacimiento, tipoSangre, sexo, telefono);
+
+                    Paciente paciente = new Paciente(id, nombre, apellido, fechaNacimiento, tipoSangre, sexo, telefono, contrasenaPaciente);
                     hospital.registrarPaciente(paciente);
 
                     System.out.println("\nPaciente registrado exitosamente");
@@ -204,7 +224,6 @@ public class Menu {
                     String nombreM = scanner.nextLine();
                     System.out.println("Ingrese el apellido del médico: ");
                     String apellidoM = scanner.nextLine();
-
 
                     System.out.println("Ingrese el año de nacimiento: ");
                     int anoM = scanner.nextInt();
@@ -228,7 +247,6 @@ public class Menu {
                             existeNumTelefonoM = true;
                         }
                     }
-
                     while (!existeRFCM) {
                         System.out.println("Ingrese el rfc del médico: ");
                         rfc = scanner.nextLine();
@@ -240,12 +258,16 @@ public class Menu {
                         }
                     }
 
+                    System.out.print("Ingrese la constrasenia del medico: ");
+                    String constraseniaMedico = scanner.nextLine();
+
                     String anioCadena = String.valueOf(fechaNacimientoM.getYear());
 
                     String idMedico = hospital.generarIdMedico(apellidoM, anioCadena);
 
-                    Medico medico = new Medico(idMedico, nombreM, apellidoM, fechaNacimientoM, telefonoM, rfc);
+                    Medico medico = new Medico(idMedico, nombreM, apellidoM, fechaNacimientoM, telefonoM, rfc, constraseniaMedico);
                     hospital.registrarMedico(medico);
+
 
                     System.out.println("\nMédico registrado exitosamente");
                     break;
@@ -306,7 +328,6 @@ public class Menu {
                     Medico medicoConsulta = null;
                     Consultorio consultorioConsulta = null;
 
-
                     while (pacienteConsulta == null) {
                         System.out.println("Ingresa el id del paciente: ");
                         String pacienteId = scanner.nextLine();
@@ -341,8 +362,12 @@ public class Menu {
                     }
 
                     Consulta nuevaConsulta = new Consulta(idConsulta, fechaConsulta, pacienteConsulta, medicoConsulta, consultorioConsulta);
-
-                    hospital.registrarConsulta(nuevaConsulta, pacienteConsulta.getId());
+                    if (hospital.validarConsulta(fechaConsulta, consultorioConsulta.piso, medicoConsulta.getId())) {
+                        hospital.registrarConsulta(nuevaConsulta);
+                        System.out.println("Consulta registrada correctamente.");
+                    } else {
+                        System.out.println("No se pudo registrar la consulta. El consultorio o el médico no están disponibles en esa fecha.");
+                    }
 
                     System.out.println("Consulta exitosamente registrada");
                     break;
@@ -381,7 +406,7 @@ public class Menu {
                     hospital.mostrarConsultorioPorId(idBusquedaConsul);
                     break;
                 case 12:
-                    System.out.println("\n-----Adiosito-----");
+                    System.out.println("\n-----Adiosito-----\n");
                     return;
             }
         }

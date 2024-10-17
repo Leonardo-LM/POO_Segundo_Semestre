@@ -2,8 +2,9 @@
 package consultas;
 
 import consultorios.Consultorio;
-import medicos.Medico;
-import pacientes.Paciente;
+import usuarios.medicos.Medico;
+import usuarios.pacientes.Paciente;
+import utils.Status;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ public class Consulta {
     public Paciente paciente;
     public Medico medico;
     public Consultorio consultorio;
+    public Status status;
 
     public Consulta(String id, LocalDateTime fechaHora, Paciente paciente, Medico medico, Consultorio consultorio) {
         this.id = id;
@@ -20,12 +22,12 @@ public class Consulta {
         this.paciente = paciente;
         this.medico = medico;
         this.consultorio = consultorio;
+        this.status = status;
     }
-
 
     //------------------------------ Métodos ---------------------------------
     public String mostrarInformacion() {
-        return String.format("\nId: %s, Fecha: %s, Id paciente: %s, Nombre paciente: %d, Id médico: %s, Nombre médico: %s, Piso consultorio: %d, Num. Concultorio: %d",
+        return String.format("\nId: %s, Fecha: %s, Id paciente: %s, Nombre paciente: %s, Id médico: %s, Nombre médico: %s, Piso consultorio: %d, Num. Concultorio: %d, Status: %s",
                 id,
                 fechaHora,
                 paciente.getId(),
@@ -33,7 +35,8 @@ public class Consulta {
                 medico.getId(),
                 medico.getNombre(),
                 consultorio.getPiso(),
-                consultorio.getNumeroConsultorio()
+                consultorio.getNumeroConsultorio(),
+                status
         );
     }
 
@@ -78,5 +81,13 @@ public class Consulta {
 
     public void setConsultorio(Consultorio consultorio) {
         this.consultorio = consultorio;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 }

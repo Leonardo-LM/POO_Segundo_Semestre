@@ -3,45 +3,59 @@ package hospital;
 
 import consultas.Consulta;
 import consultorios.Consultorio;
-import medicos.Medico;
-import pacientes.Paciente;
+import usuarios.administrador.Administrador;
+import usuarios.medicos.Medico;
+import usuarios.pacientes.Paciente;
+import usuarios.Usuario;
+import utils.Status;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
 public class Hospital {
+    public ArrayList<Usuario> listaUsuarios = new ArrayList<Usuario>();
+    public ArrayList<Administrador> listaAdministradores = new ArrayList<>();
     public ArrayList<Paciente> listaPacientes = new ArrayList<>();
     public ArrayList<Medico> listaMedicos = new ArrayList<>();
     public ArrayList<Consulta> listaConsultas = new ArrayList<>();
     public ArrayList<Consultorio> listaConsultorios = new ArrayList<>();
     private ValidadorHospital validador = new ValidadorHospital();
     private Random random = new Random();
+    public Administrador administrador;
+    //Datos de fecha de Admin
+    public LocalDate fechaNacimientoAdmin = LocalDate.of(2004, 11, 23);
+
+    public Hospital() {
+        administrador = new Administrador("A-1", "Administrador", "1", fechaNacimientoAdmin, "44232323", "Rt3", "12345", 12.78, 5);
+        this.listaUsuarios.add(administrador);
+        this.listaAdministradores.add(administrador);
+    }
 
     // -----------------------Métodos para registros -------------------------------
 
     public void registrarPaciente(Paciente paciente) {
+        this.listaUsuarios.add(paciente);
         this.listaPacientes.add(paciente);
     }
 
     public void registrarMedico(Medico medico) {
         this.listaMedicos.add(medico);
+        this.listaUsuarios.add(medico);
     }
 
-    public void registrarConsulta(Consulta consulta, String idPaciente) {
-        //No exista una consulta en la fecha y consultorio deseado
+    public void registrarConsulta(Consulta consulta) {
         if (!validador.validarDisponibilidadEnFechaConsulta(consulta.getFechaHora(), consulta.getConsultorio().getNumeroConsultorio(), this.listaConsultas)) {
             System.out.println("Ya existe una consulta registrada para esa fecha.");
             return;
         }
-        //Validar disponibilidad medico
         if (!validador.validarDisponibilidadMedico(consulta.getFechaHora(), consulta.getMedico().getId(), this.listaConsultas)) {
             System.out.println("El medico no tiene disponibilidad para esa fecha.");
             return;
         }
-
         this.listaConsultas.add(consulta);
     }
 
@@ -54,7 +68,7 @@ public class Hospital {
     public void mostrarPaciente() {
         System.out.println("\n*** PACIENTES DEL HOSPITAL ***");
         if (listaPacientes.isEmpty()) {
-            System.out.println("No hay pacientes registrados");
+            System.out.println("No hay usuarios.pacientes registrados");
         } else {
             for (Paciente paciente : this.listaPacientes) {
                 System.out.println(paciente.mostrarDatos());
@@ -76,7 +90,7 @@ public class Hospital {
     public void mostrarConsultorio() {
         System.out.println("\n*** CONSULTORIOS DEL HOSPITAL ***");
         if (listaConsultorios.isEmpty()) {
-            System.out.println("No hay pacientes registrados");
+            System.out.println("No hay usuarios.pacientes registrados");
         } else {
             for (Consultorio consultorio : this.listaConsultorios) {
                 System.out.println(consultorio.mostrarDatosConsultorio());
@@ -125,14 +139,60 @@ public class Hospital {
         }
     }
 
-    public void mostrarConsultasPaciente(String id) {
-        Paciente paciente = obtenerPacientePorId(id);
-        if (paciente != null) {
-            System.out.println(paciente.verConsultas());
-        } else {
-            System.out.println("No se encontró el paciente con el ID " + id);
-        }
+    //Tarea 3-10-24
+    public void mostrarConsultasMedicos(String id) {
+        List<Consulta> consultasMedico = this.listaConsultas.stream()
+                .filter(consulta -> consulta.getMedico().getId().equals(id))
+                .toList();
 
+        if (consultasMedico.isEmpty()) {
+            System.out.println("\nNo tiene consultas registradas.");
+        } else {
+            System.out.println("\n*** Consultas del Médico ***");
+            for (Consulta consulta : consultasMedico) {
+                System.out.println(consulta.mostrarInformacion());
+            }
+        }
+    }
+
+    public void mostrarPacientesDeMedico(String id) {
+        List<Paciente> pacientesMedico = this.listaConsultas.stream()
+                .filter(consulta -> consulta.getMedico().getId().equals(id))
+                .map(Consulta::getPaciente)
+                .distinct()
+                .toList();
+
+        if (pacientesMedico.isEmpty()) {
+            System.out.println("\nNo tiene usuarios.pacientes registrados.");
+            return;
+        } else {
+            System.out.println("\n*** PACIENTES DEL MÉDICO ***");
+            for (Paciente paciente : pacientesMedico) {
+                System.out.println(paciente.mostrarDatos());
+            }
+        }
+    }
+
+    public void mostrarConsultasPacientes(String id) {
+        List<Consulta> consultasPaciente = this.listaConsultas.stream()
+                .filter(consulta -> consulta.getPaciente().getId().equals(id))
+                .toList();
+
+        if (consultasPaciente.isEmpty()) {
+            System.out.println("\nNo tiene consultas registradas.");
+        } else {
+            System.out.println("\n*** Consultas del Paciente ***");
+            boolean existenConsultasPendientes = false;
+            for (Consulta consulta : consultasPaciente) {
+                System.out.println(consulta.mostrarInformacion());
+                if (consulta.getStatus() == Status.PENDIENTE) {
+                    existenConsultasPendientes = true;
+                }
+            }
+            if (!existenConsultasPendientes) {
+                System.out.println("No tienes consultas pendientes.");
+            }
+        }
     }
 
     //--------------- Métodos para Obtener id´s---------------------
@@ -141,10 +201,7 @@ public class Hospital {
         return this.listaPacientes.stream().filter(
                 paciente -> paciente.getId().equals(idP)
         ).findFirst().orElse(null);
-
-        //.trim() para eliminar espacios en blanco
     }
-
 
     public Medico obtenerMedicoPorId(String idM) {
         return listaMedicos.stream().filter(p -> p.getId().equals(idM)).findFirst().orElse(null);
@@ -156,7 +213,6 @@ public class Hospital {
                 .findFirst()
                 .orElse(null);
     }
-
 
     // ----------------------------Válidaciones-------------------------------------
 
@@ -191,9 +247,25 @@ public class Hospital {
         return true;
     }
 
+    public Usuario validarInicioSesion(String idUser, String contrasena) {
+        for (Usuario usuario : this.listaUsuarios) {
+            if (usuario.getId().equals(idUser) && usuario.getContrasenia().equals(contrasena)) {
+                return usuario;
+            }
+        }
+        return null;
+    }
+
+    public boolean validarConsulta(LocalDateTime fechaConsulta, int numeroConsultorio, String idMedico) {
+        boolean disponibleConsultorio = validador.validarDisponibilidadEnFechaConsulta(fechaConsulta, numeroConsultorio, this.listaConsultas);
+        boolean disponibleMedico = validador.validarDisponibilidadMedico(fechaConsulta, idMedico, this.listaConsultas);
+
+        return disponibleConsultorio && disponibleMedico;
+    }
+
     // -----------------Métodos para generar id´s----------------------------
     public String generarIdPaciente() {
-        // p -{año actual} - {mes actual} - {longitud pacientes +1} - {1,100000}
+        // p -{año actual} - {mes actual} - {longitud usuarios.pacientes +1} - {1,100000}
         LocalDate fecha = LocalDate.now();
 
         int anoActual = fecha.getYear();
